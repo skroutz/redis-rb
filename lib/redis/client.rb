@@ -11,6 +11,7 @@ class Redis
       :timeout => 5.0,
       :password => nil,
       :db => 0,
+      :inherit_socket => false
     }
 
     def scheme
@@ -43,6 +44,10 @@ class Redis
 
     def db=(db)
       @options[:db] = db.to_i
+    end
+
+    def inherit_socket?
+      @options[:inherit_socket]
     end
 
     attr :logger
@@ -267,10 +272,11 @@ class Redis
 
       begin
         if connected?
-          if Process.pid != @pid
+          unless inherit_socket? || Process.pid == @pid
             raise InheritedError,
               "Tried to use a connection from a child process without reconnecting. " +
-              "You need to reconnect to Redis after forking."
+              "You need to reconnect to Redis after forking " +
+              "or set :inherit_socket to true."
           end
         else
           connect
